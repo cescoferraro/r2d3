@@ -1,17 +1,18 @@
-package cmd
+package util
 
 import (
 	"encoding/json"
 	"errors"
 	"github.com/cescoferraro/trello"
+	"github.com/spf13/viper"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 )
 
-
-func weekCheckList(now time.Time, token string, card *trello.Card) ([]CheckList, error) {
+func WeekCheckList(now time.Time, card *trello.Card) ([]CheckList, error) {
+	token := viper.GetString("token")
 	result, err := getChelistsFromCard(card, token)
 	if err != nil {
 		log.Fatal(err)
@@ -19,7 +20,8 @@ func weekCheckList(now time.Time, token string, card *trello.Card) ([]CheckList,
 	}
 	return result, nil
 }
-func currentDayCheckList(now time.Time, token string, card *trello.Card) (CheckList, error) {
+func CurrentDayCheckList(now time.Time, card *trello.Card) (CheckList, error) {
+	token := viper.GetString("token")
 	var result CheckList
 	cheklists, err := getChelistsFromCard(card, token)
 	if err != nil {
@@ -29,14 +31,13 @@ func currentDayCheckList(now time.Time, token string, card *trello.Card) (CheckL
 	for _, day := range cheklists {
 		// hoje
 		if day.Name == funcName(now) {
-			log.Println(day.Name)
 			return day, nil
 		}
 	}
 	return result, errors.New("not found")
 }
 
-func currentUserCard(user string, list *trello.List) (*trello.Card, error) {
+func CurrentUserCard(list *trello.List) (*trello.Card, error) {
 	var result *trello.Card
 	cards, err := list.GetCards(trello.Defaults())
 	if err != nil {
@@ -44,13 +45,13 @@ func currentUserCard(user string, list *trello.List) (*trello.Card, error) {
 		return result, nil
 	}
 	for _, card := range cards {
-		if card.Name == user {
+		if card.Name == viper.GetString("username") {
 			return card, nil
 		}
 	}
 	return result, errors.New("not found")
 }
-func currentWeekList(now time.Time, board *trello.Board) (*trello.List, error) {
+func CurrentWeekList(now time.Time, board *trello.Board) (*trello.List, error) {
 	var result *trello.List
 	lists, err := board.GetLists(trello.Defaults())
 	if err != nil {
@@ -60,12 +61,12 @@ func currentWeekList(now time.Time, board *trello.Board) (*trello.List, error) {
 		return result, err
 	}
 	result = lists[0]
-	log.Println(result.Name)
 	return result, nil
 }
 
-func d3Board(token string) (*trello.Board, error) {
-	client := trello.NewClient(appKey, token)
+func D3Board() (*trello.Board, error) {
+	token := viper.GetString("token")
+	client := trello.NewClient(AppKey, token)
 	d3BoardID := "538f872d42bdfee638a6b839"
 	board, err := client.GetBoard(d3BoardID, trello.Defaults())
 	if err != nil {
@@ -74,7 +75,7 @@ func d3Board(token string) (*trello.Board, error) {
 	return board, err
 }
 
-func state(s string) string {
+func State(s string) string {
 	switch s {
 	case "imcomplete":
 		return ":no_entry:"
@@ -87,7 +88,7 @@ func state(s string) string {
 
 func getChelistsFromCard(card *trello.Card, token string) ([]CheckList, error) {
 	var result []CheckList
-	resp, err := http.Get(`https://api.trello.com/1/card/` + card.ID + `/checklists?key=` + appKey + `&token=` + token)
+	resp, err := http.Get(`https://api.trello.com/1/card/` + card.ID + `/checklists?key=` + AppKey + `&token=` + token)
 	if err != nil {
 		// handle err
 		return result, err

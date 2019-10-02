@@ -1,8 +1,10 @@
 package cmd
 
 import (
+	"github.com/cescoferraro/r2d3/util"
 	"github.com/kyokomi/emoji"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -19,39 +21,46 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		verifyIfRequirementesAreMet()
 		now := time.Now()
-		token := "c6a1826b020982e644517f56d0f29c88d0c65dbb67c00fdab346a420c1bcfc36"
-		board, err := d3Board(token)
+		board, err := util.D3Board()
 		if err != nil {
 			log.Fatal(err)
 			return err
 		}
-		last, err := currentWeekList(now, board)
+		last, err := util.CurrentWeekList(now, board)
 		if err != nil {
 			log.Fatal(err)
 			return err
 		}
-		card, err := currentUserCard("Cesco", last)
+		card, err := util.CurrentUserCard(last)
 		if err != nil {
 			log.Fatal(err)
 			return err
 		}
-		cheklist, err := weekCheckList(now, token, card)
+		cheklist, err := util.WeekCheckList(now, card)
 		if err != nil {
 			log.Fatal(err)
 			return err
 		}
 		for _, kk := range cheklist {
 			log.Println(kk.Name)
-			for _, ckItem := range kk.CheckItems {
-				pizzaMessage := emoji.Sprint(state(ckItem.State) + "" + ckItem.Name + " " + ckItem.ID)
+			for index, ckItem := range kk.CheckItems {
+				pizzaMessage := emoji.Sprint(spacer(index+1) + strconv.Itoa(index+1) + " " + util.State(ckItem.State) + "" + ckItem.Name + " " + ckItem.ID)
 				hey := emoji.Sprint(pizzaMessage)
 				log.Println(hey)
 			}
 		}
 		return nil
 	},
+}
 
+func spacer(i int) string {
+
+	if i <= 9 {
+		return " "
+	}
+	return ""
 }
 
 func init() {
